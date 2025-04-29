@@ -1,0 +1,27 @@
+<resources>
+    <string name="app_name">Fint</string>
+    <string name="location">location</string>
+    <string name="header_title">header</string>
+    <string name="header">Faulu International</string>
+    <string name="where">Location : Nairobi, Ngong Rd</string>
+    <string name="courses"><![CDATA[Cousres Offered : KCSE & IGCSE]]></string>
+    <string name="have_a_question">Have a Question?</string>
+    <string name="contact_us">Contact Us</string>
+    <string name="name_hint">Name</string>
+    <string name="email_hint">Email</string>
+    <string name="message_hint">Message</string>
+    <string name="submitting_button">Submitting</string>
+    <string name="submit_button">Submit</string>
+    <string name="login_title">LOGIN</string>
+    <string name="name_bar">Name</string>
+    <string name="email_bar">Email</string>
+    <string name="password_bar">Password</string>
+    <string name="login_button">login</string>
+    <string name="register_prompt">Register</string>
+    <string name="forgot_prompt">Forgot password?</string>
+    <string name="forgot_password_title">Forgot Password</string>
+    <string name="forgot_password_instruction">Enter your email address to receive a password reset link</string>
+    <string name="email_pass">Email</string>
+    <string name="back_to_login">Back to Login</string>
+    <string name="name_arg">Name</string>
+</resources>

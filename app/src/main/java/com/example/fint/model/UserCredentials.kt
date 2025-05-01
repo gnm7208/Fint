@@ -17,5 +17,7 @@ data class UserCredentials(
 
     @get:PropertyName("profileImageUrl")
     val profileImageUrl: String = ""
+
+
 )
 

@@ -1,14 +1,11 @@
-package com.example.fint
+package com.example.fint.model
 
 import androidx.lifecycle.ViewModel
-import com.google.firebase.database.FirebaseDatabase
-import androidx.lifecycle.viewModelScope
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel

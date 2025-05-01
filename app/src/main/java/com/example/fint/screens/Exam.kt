@@ -40,9 +40,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
-import com.example.fint.AuthViewModel
+import com.example.fint.model.AuthViewModel
 import com.example.fint.ExamResult
-import com.example.fint.ExamViewModel
+import com.example.fint.model.ExamViewModel
 import com.example.fint.R
 import com.example.fint.components.Header
 
@@ -61,13 +61,6 @@ fun Exam(
     val isLoading by examViewModel.isLoading.collectAsState()
     val context = LocalContext.current
 
-    val pickMediaLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia()
-    ) { uri: Uri? ->
-        uri?.let {
-            authViewModel.uploadProfileImage(it, context)
-        }
-    }
 
     val getContentLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -78,7 +71,13 @@ fun Exam(
     }
 
     val isPhotoPickerAvailable = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-
+    val pickMediaLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        uri?.let {
+            authViewModel.uploadProfileImage(it, context)
+        }
+    }
 
 
     // Trigger fetch only once per user
@@ -96,30 +95,36 @@ fun Exam(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
     ) {
         Header()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
 
-        // Show profile image
-        userData?.let { user ->
-            if (user.profileImageUrl.isNotEmpty()) {
-                val painter = rememberAsyncImagePainter(
-                    model = user.profileImageUrl,
-                    error = painterResource(R.drawable.default_profile)
-                )
+            // Show profile image
+            userData?.let { user ->
+                if (user.profileImageUrl.isNotEmpty()) {
+                    val painter = rememberAsyncImagePainter(
+                        model = user.profileImageUrl,
+                        placeholder = painterResource(R.drawable.default_profile),
+                        error = painterResource(R.drawable.default_profile),
+                        fallback = painterResource(R.drawable.default_profile)
+                    )
 
-                Image(
-                    painter = painter,
-                    contentDescription = "Profile Picture",
-                    modifier = Modifier
-                        .size(64.dp)
-                        .clip(CircleShape)
-                )
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Button(
-                onClick = {
-                    if (isPhotoPickerAvailable) {
+                    Image(
+                        painter = painter,
+                        contentDescription = "Profile Picture",
+                        modifier = Modifier
+                            .size(64.dp)
+                            .clip(CircleShape)
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(onClick = {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         pickMediaLauncher.launch(
                             PickVisualMediaRequest.Builder()
                                 .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly)
@@ -128,51 +133,50 @@ fun Exam(
                     } else {
                         getContentLauncher.launch("image/*")
                     }
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Change Profile Picture")
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = "Welcome, ${user.name}",
-                fontWeight = FontWeight.Bold,
-                fontSize = 24.sp,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
-            if (isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                }) {
+                    Text("Change Profile Picture")
                 }
-            } else {
-                if (examResults.isNotEmpty()) {
-                    LazyColumn {
-                        items(examResults) { result ->
-                            ExamResultCard(result)
-                        }
+
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "Welcome, ${user.name}",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 24.sp,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                if (isLoading) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     }
                 } else {
-                    Text(
-                        "No exam results available.",
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Button(
-                onClick = {
-                    authViewModel.logout()
-                    navController.navigate("auth") {
-                        popUpTo("app") { inclusive = true }
+                    if (examResults.isNotEmpty()) {
+                        LazyColumn {
+                            items(examResults) { result ->
+                                ExamResultCard(result)
+                            }
+                        }
+                    } else {
+                        Text(
+                            "No exam results available.",
+                            color = MaterialTheme.colorScheme.error
+                        )
                     }
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Log Out", color = Color.White)
+                }
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Button(
+                    onClick = {
+                        authViewModel.logout()
+                        navController.navigate("auth") {
+                            popUpTo("app") { inclusive = true }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Log Out", color = Color.White)
+                }
             }
         }
 
@@ -198,3 +202,20 @@ fun ExamResultCard(examResult: ExamResult) {
         }
     }
 }
+
+//Button(
+//                onClick = {
+//                    if (isPhotoPickerAvailable) {
+//                        pickMediaLauncher.launch(
+//                            PickVisualMediaRequest.Builder()
+//                                .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly)
+//                                .build()
+//                        )
+//                    } else {
+//                        getContentLauncher.launch("image/*")
+//                    }
+//                },
+//                modifier = Modifier.fillMaxWidth()
+//            ) {
+//                Text("Change Profile Picture")
+//            }

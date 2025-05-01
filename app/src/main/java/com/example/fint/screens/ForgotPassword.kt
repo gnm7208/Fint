@@ -7,7 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.fint.AuthViewModel
+import com.example.fint.model.AuthViewModel
 import com.example.fint.components.Header
 import kotlinx.coroutines.launch
 

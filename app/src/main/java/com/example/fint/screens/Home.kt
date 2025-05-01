@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.example.fint.AuthViewModel
+import com.example.fint.model.AuthViewModel
 import com.example.fint.R
 import com.example.fint.ui.theme.Fonti
 

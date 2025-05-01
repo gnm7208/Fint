@@ -1,6 +1,7 @@
 package com.example.fint.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.IconButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
@@ -9,12 +10,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.fint.AuthViewModel
+import com.example.fint.model.AuthViewModel
 import com.example.fint.components.Header
 import com.example.fint.navigation.AppRoutes
 
@@ -56,6 +59,10 @@ fun LoginScreen(
             value = name,
             onValueChange = { name = it },
             label = { Text("Name") },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Next
+            ),
             modifier = Modifier.fillMaxWidth(),
             isError = errorMessage != null
         )
@@ -66,6 +73,10 @@ fun LoginScreen(
             value = email,
             onValueChange = { email = it },
             label = { Text("Email") },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Email,
+                imeAction = ImeAction.Next
+            ),
             modifier = Modifier.fillMaxWidth(),
             isError = errorMessage != null
         )
@@ -86,6 +97,10 @@ fun LoginScreen(
                     Icon(imageVector = icon, contentDescription = description)
                 }
             },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                imeAction = ImeAction.Done
+            ),
             modifier = Modifier.fillMaxWidth(),
             isError = errorMessage != null
         )

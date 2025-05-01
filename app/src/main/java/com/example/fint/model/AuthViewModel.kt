@@ -1,12 +1,8 @@
-package com.example.fint
+package com.example.fint.model
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.fint.model.UserCredentials
-import com.example.fint.repository.UserRepository
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.userProfileChangeRequest
-import com.google.firebase.firestore.FieldValue
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,13 +13,15 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import android.widget.Toast
+import com.google.firebase.database.FirebaseDatabase
 
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val auth: FirebaseAuth,
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val database: FirebaseDatabase
 ) : ViewModel() {
 
     sealed class AuthState {
@@ -57,6 +55,9 @@ class AuthViewModel @Inject constructor(
 
     private val _passwordResetState = MutableStateFlow<AuthState>(AuthState.Idle)
     val passwordResetState: StateFlow<AuthState> = _passwordResetState
+
+    private val auth = FirebaseAuth.getInstance()
+    private val storage = FirebaseStorage.getInstance()
 
     val isLoading: Boolean
         get() = _loginState.value == AuthState.Loading || _registerState.value == AuthState.Loading
@@ -97,33 +98,52 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun register(email: String, password: String, name: String) {
-        _registerState.value = AuthState.Loading
+    fun register(name: String, email: String, password: String, grade: String, context: Context) {
+        val cleanEmail = email.trim()
         viewModelScope.launch {
-            try {
-                val result = auth.createUserWithEmailAndPassword(email, password).await()
-                val user = result.user
+            auth.createUserWithEmailAndPassword(cleanEmail, password)
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        val userId = auth.currentUser?.uid ?: return@addOnCompleteListener
+                        val newUser = UserCredentials(
+                            userId = userId,
+                            name = name,
+                            email = cleanEmail,
+                            userClass = grade,
+                            profileImageUrl = "" // default empty or placeholder
+                        )
 
-                if (user != null) {
-                    val userData = UserCredentials(
-                        userId = user.uid,
-                        email = email,
-                        name = name,
-                        userClass = userClass.value,
-                        profileImageUrl = ""
-                    )
-
-                    saveUserData(userData)
-                    _registerState.value = AuthState.Success
-                } else {
-                    _registerState.value = AuthState.Error("User creation failed.")
+                        // Save to Realtime Database
+                        FirebaseDatabase.getInstance().reference
+                            .child("users")
+                            .child(userId)
+                            .setValue(newUser)
+                            .addOnSuccessListener {
+                                // Also save to Firestore
+                                FirebaseFirestore.getInstance()
+                                    .collection("users")
+                                    .document(userId)
+                                    .set(newUser)
+                                    .addOnSuccessListener {
+                                        Toast.makeText(context, "User registered successfully", Toast.LENGTH_SHORT).show()
+                                        _userData.value = newUser
+                                    }
+                                    .addOnFailureListener {
+                                        Toast.makeText(context, "Failed to save to Firestore", Toast.LENGTH_SHORT).show()
+                                    }
+                            }
+                            .addOnFailureListener {
+                                Toast.makeText(context, "Failed to save to Realtime DB", Toast.LENGTH_SHORT).show()
+                            }
+                    } else {
+                        Toast.makeText(context, "Registration failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                    }
                 }
-
-            } catch (e: Exception) {
-                _registerState.value = AuthState.Error(e.message ?: "Registration failed.")
-            }
         }
     }
+
+
+
 
     private fun saveUserData(userData: UserCredentials) {
         firestore.collection("users")
@@ -150,14 +170,30 @@ class AuthViewModel @Inject constructor(
                 // Optional: log or show a toast/snackbar
             }
     }
-
-
     fun fetchUserData() {
-        viewModelScope.launch {
-            val uid = auth.currentUser?.uid
-            uid?.let { loadUserData(it) }
-        }
+        val userId = auth.currentUser?.uid ?: return
+
+        database.reference.child("users").child(userId)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                val name = snapshot.child("name").value as? String ?: ""
+                val email = snapshot.child("email").value as? String ?: ""
+                val profileImageUrl = snapshot.child("profileImageUrl").value as? String ?: ""
+
+                val user = UserCredentials(
+                    userId = userId,
+                    name = name,
+                    email = email,
+                    profileImageUrl = profileImageUrl
+                )
+
+                _userData.value = user
+            }
+            .addOnFailureListener {
+                Log.e("AuthViewModel", "Failed to load user data: ${it.message}")
+            }
     }
+
 
     fun logout() {
         auth.signOut()
@@ -188,52 +224,42 @@ class AuthViewModel @Inject constructor(
     fun uploadProfileImage(uri: Uri, context: Context) {
         val userId = auth.currentUser?.uid ?: return
 
-        val storageRef = FirebaseStorage.getInstance().reference
-            .child("profileImages/$userId.jpg")
+        // Validate URI
+        if (uri.scheme != "content" && uri.scheme != "file") {
+            Toast.makeText(context, "Invalid image URI", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val imageRef = storage.reference.child("profileImages/$userId.jpg")
 
         viewModelScope.launch {
             try {
-                // Upload to Firebase Storage
-                val uploadTaskSnapshot = storageRef.putFile(uri).await()
+                Log.d("UploadImage", "Uploading URI: $uri")
 
-                // ✅ Check if upload was successful
-                if (uploadTaskSnapshot.metadata != null) {
-                    // Now safe to get download URL
-                    val downloadUrl = storageRef.downloadUrl.await().toString()
+                // Upload the file to Firebase Storage
+                imageRef.putFile(uri).await()
 
-                    // Update Firestore user document
-                    firestore.collection("users")
-                        .document(userId)
-                        .update("profileImageUrl", downloadUrl)
-                        .addOnSuccessListener {
-                            // Update local _userData so UI refreshes
-                            _userData.value = _userData.value?.copy(profileImageUrl = downloadUrl)
-                        }
-                        .addOnFailureListener {
-                            Toast.makeText(context, "Failed to update Firestore", Toast.LENGTH_LONG).show()
-                        }
-                } else {
-                    Toast.makeText(context, "Failed to upload image", Toast.LENGTH_LONG).show()
-                }
+                // Get download URL
+                val downloadUrl = imageRef.downloadUrl.await().toString()
+
+                // Save URL to Realtime Database
+                val userRef = database.reference.child("users").child(userId)
+                userRef.child("profileImageUrl").setValue(downloadUrl).await()
+
+                // Optional: Refresh user data or update state
+                fetchUserData() // Ensures UI reflects the updated profile image
+
+                Toast.makeText(context, "Image uploaded successfully!", Toast.LENGTH_SHORT).show()
+
             } catch (e: Exception) {
-                Toast.makeText(context, "Failed to upload image: ${e.message}", Toast.LENGTH_LONG).show()
+                Log.e("UploadImage", "Upload failed", e)
+                Toast.makeText(context, "Upload failed: ${e.message}", Toast.LENGTH_LONG).show()
             }
         }
     }
 
-
-
-    // State updaters
-    fun updateEmail(newEmail: String) {
-        _email.value = newEmail
-    }
-
     fun updateName(newName: String) {
         _name.value = newName
-    }
-
-    fun updateUserClass(newUserClass: String) {
-        _userClass.value = newUserClass
     }
 
     // Expose user data for convenience
@@ -242,3 +268,5 @@ class AuthViewModel @Inject constructor(
     val currentEmail: String get() = _userData.value?.email ?: ""
     val currentUserClass: String get() = _userData.value?.userClass ?: ""
 }
+
+

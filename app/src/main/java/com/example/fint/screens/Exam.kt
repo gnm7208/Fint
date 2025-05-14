@@ -123,21 +123,21 @@ fun Exam(
                     )
                 }
                 Spacer(modifier = Modifier.height(12.dp))
-                Button(onClick = {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        pickMediaLauncher.launch(
-                            PickVisualMediaRequest.Builder()
-                                .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                                .build()
-                        )
-                    } else {
-                        getContentLauncher.launch("image/*")
-                    }
-                }) {
-                    Text("Change Profile Picture")
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
+//                Button(onClick = {
+//                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+//                        pickMediaLauncher.launch(
+//                            PickVisualMediaRequest.Builder()
+//                                .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly)
+//                                .build()
+//                        )
+//                    } else {
+//                        getContentLauncher.launch("image/*")
+//                    }
+//                }) {
+//                    Text("Change Profile Picture")
+//                }
+//
+//                Spacer(modifier = Modifier.height(12.dp))
                 Text(
                     text = "Welcome, ${user.name}",
                     fontWeight = FontWeight.Bold,

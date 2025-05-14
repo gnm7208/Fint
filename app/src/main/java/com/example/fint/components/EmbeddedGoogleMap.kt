@@ -14,7 +14,7 @@ fun EmbeddedGoogleMap() {
             webViewClient = WebViewClient()
             settings.javaScriptEnabled = true // Needed for Google Maps Embed
             loadUrl(
-                "https://www.google.com/maps/embed/v1/place?key=AIzaSyD0HmjCI0kpaXoAMWo3djYB4NW9IZdjuvM&q=Faulu+School,Nairobi"
+                "https://www.google.com/maps/embed/v1/place?key=AIzaSyChyo1ZYe6YU3eJ4xNuwqf1tyvoYt_9oB8=Faulu+School,Nairobi"
             )
         }
     })

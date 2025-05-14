@@ -46,6 +46,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.fint.model.ContactViewModel
 import com.example.fint.R
+import com.example.fint.components.EmbeddedGoogleMap
 import com.example.fint.components.Header
 import com.example.fint.ui.theme.FintTheme
 
